@@ -1,56 +1,77 @@
 const UserService = require("../Services/UserService");
 const MiscService = require("../Services/MiscServices");
-
-module.exports = {
-  signup: async (req, res, next) => {
-    let user = req.body;
-    try {
-      let exist = await UserService.getUser(user.email);
-      exist
-        ? res.status(400).json({ message: "user Allready Exist" })
-        : ((user.password = await MiscService.encryptPassword(user.password)),
-          (user = await UserService.createUser(user)),
-          (token = await MiscService.generateToken(user.id)),
-          res
-            .status(201)
-            .json({ token, user: { name: user.name, email: user.email } }));
-    } catch (error) {
-      next(error);
+const User = require("../Model/userModel");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const signup = async (req, res) => {
+  User.findOne({ email: req.body.email }).then(async (user) => {
+    if (user) {
+      return res.status(404).json({ message: "User already registered" });
+    } else {
+      const name = req.body.name;
+      const email = req.body.email;
+      const password = await MiscService.encryptPassword(req.body.password);
+      let user = new User({
+        name,
+        email,
+        password,
+      });
+      user
+        .save()
+        .then((data) => {
+          res.status(201).json({ message: "Created", data });
+        })
+        .catch((e) => res.status(500).json({ error: e }));
     }
-  },
-  login: async (req, res) => {
-    let user = req.body;
-    try {
-      let User = await UserService.getUser(user.email);
-      User
-        ? ((passwordVerification = await MiscService.verifyPassword(
-            user.password,
-            User.password
-          )),
-          (token = MiscService.generateToken(User.id)),
-          res
-            .status(200)
-            .json({ token, user: { name: User.name, email: User.email } }))
-        : res.status(400).json("invalid user");
-    } catch (error) {
-      res.status(400).json("error.message");
-    }
-  },
+  });
 };
 
-// const fetchEmployees = async () => {
-//   try {
-//     const response = await fetch("http://localhost:6873/api/values", {
-//       method: "GET",
-//       headers: {
-//         "content-type": "application/json",
-//       },
-//     });
+const login = async (req, res) => {
+  const { email, password } = req.body;
+  const filter = { email: email };
+  User.find(filter).then(async (result) => {
+    if (result.length == 0) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Incorrect email" });
+    } else {
+      const user = result[0];
+      const user_data = {
+        user_id: result[0]._id,
+      };
+      let check = await MiscService.checkPassword(password, user.password);
+      if (check) {
+        let accessToken = jwt.sign({ user_data }, process.env.key, {
+          expiresIn: "2d",
+        });
 
-//     const names = await response.json();
+        // let refreshToken = jwt.sign({ user }, "refresh-key-secrete", {
+        //   expiresIn: "7d",
+        // });
 
-//     return names;
-//   } catch (error) {
-//     return error;
-//   }
-// };
+        const update = {
+          access_token: accessToken,
+          //refresh_token: refreshToken,
+        };
+
+        User.findOneAndUpdate(filter, update, { new: true }).then(
+          (result) => {}
+        );
+
+        const tokens = {
+          accessToken,
+          // refreshToken,
+        };
+        return res.status(200).json({
+          status: "success",
+          data: tokens,
+          message: "Logged in successfully",
+        });
+      } else {
+        return res.status(404).json({ message: "Invalid credentails" });
+      }
+    }
+  });
+};
+
+module.exports = { signup, login };
