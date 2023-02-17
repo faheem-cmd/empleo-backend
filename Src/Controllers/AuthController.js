@@ -73,4 +73,38 @@ const login = async (req, res) => {
   });
 };
 
-module.exports = { signup, login };
+async function profile(req, res) {
+  let user_id = req.user.user_data.user_id;
+
+  await User.findById(user_id).then((data) => {
+    const newData = {
+      id: data._id,
+      name: data.name,
+      email: data.email,
+    };
+    res.status(200).json({ status: 200, data: newData });
+  });
+}
+
+async function page(req, res) {
+  const { limit = 2 } = req.query;
+  console.log(req.params.id);
+
+  try {
+    const data = await User.find()
+      .limit(limit * 1)
+      .skip((req.params.id - 1) * limit)
+      .exec();
+    const count = await User.countDocuments();
+
+    res.json({
+      data,
+      totalPages: Math.ceil(count / limit),
+      currentPage: req.params.id,
+    });
+  } catch (err) {
+    console.error(err.message);
+  }
+}
+
+module.exports = { signup, login, profile, page };
