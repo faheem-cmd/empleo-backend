@@ -3,27 +3,30 @@ const MiscService = require("../Services/MiscServices");
 const User = require("../Model/userModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+
 const signup = async (req, res) => {
-  User.findOne({ email: req.body.email }).then(async (user) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
     if (user) {
       return res.status(404).json({ message: "User already registered" });
     } else {
-      const name = req.body.name;
-      const email = req.body.email;
-      const password = await MiscService.encryptPassword(req.body.password);
+      const { name, email, password } = req.body;
+      const encryptedPassword = await MiscService.encryptPassword(password);
       let user = new User({
         name,
         email,
-        password,
+        password: encryptedPassword,
       });
       user
         .save()
         .then((data) => {
-          res.status(201).json({ message: "Created", data });
+          res
+            .status(201)
+            .json({ message: "Created", username: name, email: email });
         })
         .catch((e) => res.status(500).json({ error: e }));
     }
-  });
+  } catch (e) {}
 };
 
 const login = async (req, res) => {
@@ -53,11 +56,7 @@ const login = async (req, res) => {
           access_token: accessToken,
           //refresh_token: refreshToken,
         };
-
-        User.findOneAndUpdate(filter, update, { new: true }).then(
-          (result) => {}
-        );
-
+        User.findOneAndUpdate(filter, update, { new: true });
         const tokens = {
           accessToken,
           // refreshToken,
