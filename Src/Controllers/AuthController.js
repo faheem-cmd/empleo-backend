@@ -3,7 +3,7 @@ const MiscService = require("../Services/MiscServices");
 const User = require("../Model/userModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-
+const Profession = require("../Model/profession.model");
 const signup = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -51,7 +51,7 @@ const login = async (req, res) => {
         // let refreshToken = jwt.sign({ user }, "refresh-key-secrete", {
         //   expiresIn: "7d",
         // });
-
+        let first_time = await Profession.findOne({ email: req.body.email });
         const update = {
           access_token: accessToken,
           //refresh_token: refreshToken,
@@ -65,6 +65,7 @@ const login = async (req, res) => {
           status: "success",
           data: tokens,
           message: "Logged in successfully",
+          first_time: first_time == null ? true : false,
         });
       } else {
         return res.status(404).json({ message: "Invalid credentails" });
@@ -75,7 +76,6 @@ const login = async (req, res) => {
 
 async function profile(req, res) {
   let user_id = req.user.user_data.user_id;
-
   await User.findById(user_id).then((data) => {
     const newData = {
       id: data._id,
