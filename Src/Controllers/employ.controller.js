@@ -69,6 +69,16 @@ async function updateProfession(req, res, next) {
   };
 
   const user = await Profession.findOne({ user_id: user_id });
+
+  Profession.updateOne(
+    { _id: user._id },
+    { $pull: { certifications: { _id: "63f06b6c31478d87728efbd3" } } },
+    { safe: true, multi: true },
+    function (err, obj) {
+      //do something smart
+      console.log(obj);
+    }
+  );
   Profession.findByIdAndUpdate(user._id, updatedData, (err, emp) => {
     if (err) {
       return res
