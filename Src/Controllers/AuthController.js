@@ -4,29 +4,37 @@ const User = require("../Model/userModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const Profession = require("../Model/profession.model");
+const cloudinary = require("cloudinary");
 const signup = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     if (user) {
       return res.status(404).json({ message: "User already registered" });
     } else {
-      const { name, email, password } = req.body;
+      const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+        folder: "socialmedia/avatars",
+      });
+
+      const { name, password } = req.body;
       const encryptedPassword = await MiscService.encryptPassword(password);
       let user = new User({
         name,
-        email,
+        avatar: {
+          public_id: myCloud.public_id,
+          url: myCloud.secure_url,
+        },
         password: encryptedPassword,
       });
       user
         .save()
         .then((data) => {
-          res
-            .status(201)
-            .json({ message: "Created", username: name, email: email });
+          res.status(201).json({ message: "Created", data: user });
         })
         .catch((e) => res.status(500).json({ error: e }));
     }
-  } catch (e) {}
+  } catch (e) {
+    // console.log(e);
+  }
 };
 
 const login = async (req, res) => {
