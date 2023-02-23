@@ -11,18 +11,15 @@ const signup = async (req, res) => {
     if (user) {
       return res.status(404).json({ message: "User already registered" });
     } else {
-      const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-        folder: "socialmedia/avatars",
-      });
+      // const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+      //   folder: "socialmedia/avatars",
+      // });
 
-      const { name, password } = req.body;
+      const { name, password, email } = req.body;
       const encryptedPassword = await MiscService.encryptPassword(password);
       let user = new User({
         name,
-        avatar: {
-          public_id: myCloud.public_id,
-          url: myCloud.secure_url,
-        },
+        email,
         password: encryptedPassword,
       });
       user
@@ -83,14 +80,14 @@ const login = async (req, res) => {
 };
 
 async function profile(req, res) {
-  let user_id = req.user.user_data.user_id;
-  await User.findById(user_id).then((data) => {
-    const newData = {
-      id: data._id,
-      name: data.name,
-      email: data.email,
-    };
-    res.status(200).json({ status: 200, data: newData });
+  // let user_id = req.user.user_data.user_id;
+  await User.find({}).then((data) => {
+    // const newData = {
+    //   id: data._id,
+    //   name: data.name,
+    //   email: data.email,
+    // };
+    res.status(200).json({ status: 200, data: data });
   });
 }
 
