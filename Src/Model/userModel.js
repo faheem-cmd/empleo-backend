@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 const userModal = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: false },
+    image: { type: String },
     // phone: { type: String, required: true },
     // location: { type: String, required: true },
     // user_type: { type: Boolean, required: true },

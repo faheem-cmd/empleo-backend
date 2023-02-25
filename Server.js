@@ -1,28 +1,17 @@
 const express = require("express");
-var mongoose = require("./Src/Config/db");
-var app = express();
-var cors = require("cors");
-app.use(cors());
-require("dotenv").config();
-const { success, error } = require("consola");
-const http = require("http");
+const multer = require("multer");
+const app = express();
 const router = require("./Src/Routes");
+const User = require("./Src/Model/userModel");
+var mongoose = require("./Src/Config/db");
+
 app.use("/", router);
-//MongoDB connection
-const dbName = "mydb";
+app.use(express.static("/uploads/"));
+
+const dbName = "vercity";
 const dbUrl = process.env.DB_URL || `mongodb://0.0.0.0:27017/${dbName}`;
 mongoose(`mongodb://0.0.0.0:27017/${dbName}`);
 
-const server = http.createServer(app);
-
-server.listen(process.env.PORT, () => {
-  success({
-    message: `Successfully connected with the database \n${dbUrl}`,
-    badge: true,
-  });
-
-  success({
-    message: `Server is running on \n${process.env.PORT}`,
-    badge: true,
-  });
+app.listen(8000, () => {
+  console.log("Server started on port 3000");
 });
