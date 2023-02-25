@@ -4,9 +4,9 @@ const app = express();
 const router = require("./Src/Routes");
 const User = require("./Src/Model/userModel");
 var mongoose = require("./Src/Config/db");
-
+const path = require("path");
 app.use("/", router);
-app.use(express.static("/uploads/"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const dbName = "vercity";
 const dbUrl = process.env.DB_URL || `mongodb://0.0.0.0:27017/${dbName}`;
