@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const Profession = require("../Model/profession.model");
 const cloudinary = require("cloudinary");
+
 const signup = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -112,4 +113,28 @@ async function page(req, res) {
   }
 }
 
-module.exports = { signup, login, profile, page };
+async function upload(req, res) {
+  const imagePath = req.file.path;
+  const imageRelativePath = "/" + imagePath.replace(/\\/g, "/");
+  const imageUrl = req.protocol + "://" + req.get("host") + imageRelativePath;
+  const name = req.body.name;
+  const email = req.body.email;
+  const password = req.body.password;
+  const image = imageUrl;
+  const data = new User({
+    name: name,
+    email: email,
+    image: image,
+    password: password,
+  });
+
+  data.save((err) => {
+    if (err) {
+      console.log(err);
+    }
+  });
+
+  res.json({ message: "success" });
+}
+
+module.exports = { signup, login, profile, page, upload };
