@@ -83,12 +83,15 @@ const login = async (req, res) => {
 async function profile(req, res) {
   // let user_id = req.user.user_data.user_id;
   await User.find({}).then((data) => {
-    // const newData = {
-    //   id: data._id,
-    //   name: data.name,
-    //   email: data.email,
-    // };
-    res.status(200).json({ status: 200, data: data });
+    const newData = data?.map((item) => {
+      return {
+        id: item._id,
+        name: item.name,
+        email: item.email,
+        image: item.image,
+      };
+    });
+    res.status(200).json({ status: 200, data: newData });
   });
 }
 
