@@ -96,7 +96,7 @@ async function profile(req, res) {
 }
 
 async function page(req, res) {
-  const { limit = 2 } = req.query;
+  const { limit = 10 } = req.query;
   console.log(req.params.id);
 
   try {
@@ -105,11 +105,13 @@ async function page(req, res) {
       .skip((req.params.id - 1) * limit)
       .exec();
     const count = await User.countDocuments();
+    const total = await User.find();
 
     res.json({
       data,
       totalPages: Math.ceil(count / limit),
       currentPage: req.params.id,
+      totalItems: total?.length,
     });
   } catch (err) {
     console.error(err.message);
