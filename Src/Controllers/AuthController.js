@@ -50,22 +50,21 @@ const login = async (req, res) => {
       };
       let check = await MiscService.checkPassword(password, user.password);
       if (check) {
-        let accessToken = jwt.sign({ user_data }, process.env.key, {
+        let accessToken = jwt.sign({ user_data }, "access-key-secrete", {
           expiresIn: "2d",
         });
-
-        // let refreshToken = jwt.sign({ user }, "refresh-key-secrete", {
-        //   expiresIn: "7d",
-        // });
+        let refreshToken = jwt.sign({ user_data }, "access-key-secrete", {
+          expiresIn: "7d",
+        });
         let first_time = await Profession.findOne({ email: req.body.email });
         const update = {
           access_token: accessToken,
-          //refresh_token: refreshToken,
+          refresh_token: refreshToken,
         };
         User.findOneAndUpdate(filter, update, { new: true });
         const tokens = {
           accessToken,
-          // refreshToken,
+          refreshToken,
         };
         return res.status(200).json({
           status: "success",
@@ -79,6 +78,32 @@ const login = async (req, res) => {
     }
   });
 };
+
+async function refreshToken(req, res) {
+  const refreshToken = req.body.refreshToken;
+
+  try {
+    const decoded = jwt.verify(refreshToken, "access-key-secrete");
+    console.log(decoded);
+    const user = await User.findOne({
+      _id: decoded.user_data?.user_id,
+      refreshToken,
+    });
+    if (!user) {
+      throw new Error();
+    }
+
+    // Generate a new access token
+    const accessToken = jwt.sign({ user_id: user._id }, "access-key-secrete", {
+      expiresIn: "100m",
+    });
+
+    // Return the new access token
+    res.json({ accessToken });
+  } catch (err) {
+    res.status(401).json({ message: "Invalid refresh token" });
+  }
+}
 
 async function profile(req, res) {
   // let user_id = req.user.user_data.user_id;
@@ -142,4 +167,4 @@ async function upload(req, res) {
   res.json({ message: "success" });
 }
 
-module.exports = { signup, login, profile, page, upload };
+module.exports = { signup, login, profile, page, upload, refreshToken };

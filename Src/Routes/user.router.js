@@ -32,6 +32,7 @@ router.get("/page/:id", user.page);
 router.get("/user", user.profile);
 
 router.post("/upload", upload.single("image"), user.upload);
+router.post("/refresh", user.refreshToken);
 
 router.post("/employ/profile", auth.accessToken, employ.employeeProfession);
 router.put("/employ/profile", auth.accessToken, employ.updateProfession);

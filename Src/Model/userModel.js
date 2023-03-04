@@ -8,6 +8,8 @@ const userModal = new mongoose.Schema(
     // location: { type: String, required: true },
     // user_type: { type: Boolean, required: true },
     password: { type: String, required: true },
+    access_token: { type: String, default: "" },
+    refresh_token: { type: String, default: "" },
   },
   {
     timestamps: true,
