@@ -43,7 +43,7 @@ const signup = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, device } = req.body;
   const filter = { email: email };
   User.find(filter).then(async (result) => {
     if (result.length == 0) {
@@ -59,16 +59,19 @@ const login = async (req, res) => {
       let check = await MiscService.checkPassword(password, user.password);
       if (check) {
         let accessToken = jwt.sign({ user_data }, "access-key-secrete", {
-          expiresIn: "1m",
+          expiresIn: "1d",
         });
         let refreshToken = jwt.sign({ user_data }, "access-key-secrete", {
           expiresIn: "7d",
         });
 
+        req.session.user = device;
+
         // let first_time = await Profession.findOne({ email: req.body.email });
         const update = {
           access_token: accessToken,
           refresh_token: refreshToken,
+          device,
         };
         await User.findOneAndUpdate(filter, update, { new: true });
         const tokens = {
@@ -106,7 +109,7 @@ async function refreshToken(req, res) {
 
     // Generate a new access token
     const accessToken = jwt.sign({ user_data }, "access-key-secrete", {
-      expiresIn: "1m",
+      expiresIn: "1d",
     });
     const refreshToken = jwt.sign({ user_data }, "access-key-secrete", {
       expiresIn: "7d",
@@ -126,17 +129,15 @@ async function refreshToken(req, res) {
 
 async function profile(req, res) {
   let user_id = req.user.user_data.user_id;
-  await User.find({ _id: user_id }).then((data) => {
-    const newData = data?.map((item) => {
-      return {
-        id: item._id,
-        name: item.name,
-        email: item.email,
-        image: item.image,
-      };
-    });
-    res.status(200).json({ status: 200, data: newData });
-  });
+  console.log(user_id, "bablue");
+  const data = await User.find({ _id: user_id });
+  const newData = {
+    id: data[0]._id,
+    name: data[0].name,
+    email: data[0].email,
+    image: data[0].image,
+  };
+  res.status(200).json({ status: 200, data: newData });
 }
 
 async function page(req, res) {
