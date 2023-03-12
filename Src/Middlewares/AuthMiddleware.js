@@ -3,21 +3,31 @@ const User = require("../Model/userModel");
 // require("dotenv").config();
 
 const accessToken = async (req, res, next) => {
-  let authHeader = req.headers["authorization"];
+  // let myUser = await req.session.user;
+  let device = await req.headers["device"];
+  let authHeader = await req.headers["authorization"];
   let token = authHeader && authHeader.split(" ")[1]; //Access token
-  let filter = { access_token: token };
-  User.find(filter).then((result) => {
-    console.log(result);
-    const user = result[0];
+  var filter;
+  await jwt.verify(token, "access-key-secrete", (err, access) => {
+    filter = { _id: access?.user_data?.user_id };
 
-    if (!user) {
-      return res
-        .status(403)
-        .json({ status: "error", message: "Unauthenticated" });
-    }
-    jwt.verify(token, "access-key-secrete", (err, user) => {
+    User.find(filter).then((result) => {
+      const user = result[0];
+      if (!user) {
+        return res
+          .status(403)
+          .json({ status: "error", message: "Unauthenticated" });
+      }
+      if (user) {
+        if (device !== user.device) {
+          return res
+            .status(403)
+            .json({ status: "error", message: "session expired" });
+        }
+      }
+
       if (!err) {
-        req.user = user;
+        req.user = access;
         next();
       } else {
         return res

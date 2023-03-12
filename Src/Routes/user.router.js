@@ -4,6 +4,7 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const User = require("../Model/userModel");
+const session = require("express-session");
 const bodyparser = require("body-parser");
 router.use(bodyparser.json());
 router.use(express.static("./uploads"));
@@ -18,6 +19,15 @@ const storage = multer.diskStorage({
     );
   },
 });
+
+router.use(
+  session({
+    secret: "access-key-secrete",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }, // set to true if using HTTPS
+  })
+);
 
 const upload = multer({ storage: storage });
 
