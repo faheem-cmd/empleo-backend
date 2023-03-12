@@ -65,7 +65,7 @@ const login = async (req, res) => {
           expiresIn: "7d",
         });
 
-        req.session.user = device;
+        // req.session.user = device;
 
         // let first_time = await Profession.findOne({ email: req.body.email });
         const update = {
