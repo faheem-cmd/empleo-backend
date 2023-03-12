@@ -5,6 +5,7 @@ const router = require("./Src/Routes");
 const User = require("./Src/Model/userModel");
 var mongoose = require("./Src/Config/db");
 const path = require("path");
+
 app.use("/", router);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -15,3 +16,5 @@ mongoose(`mongodb://0.0.0.0:27017/${dbName}`);
 app.listen(8000, () => {
   console.log("Server started on port 3000");
 });
+
+// "type": "module",
