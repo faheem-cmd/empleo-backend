@@ -10,6 +10,7 @@ const accessToken = async (req, res, next) => {
   var filter;
   await jwt.verify(token, "access-key-secrete", (err, access) => {
     filter = { _id: access?.user_data?.user_id };
+
     User.find(filter).then((result) => {
       const user = result[0];
       if (!user) {
@@ -24,6 +25,7 @@ const accessToken = async (req, res, next) => {
             .json({ status: "error", message: "session expired" });
         }
       }
+
       if (!err) {
         req.user = access;
         next();
