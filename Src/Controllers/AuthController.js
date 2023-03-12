@@ -5,7 +5,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const Profession = require("../Model/profession.model");
 const cloudinary = require("cloudinary");
-
+const redisClient = require("redis");
+const session = require("express-session");
 const signup = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -17,10 +18,16 @@ const signup = async (req, res) => {
       // });
 
       const { name, password, email } = req.body;
+      const imagePath = req.file.path;
+      const imageRelativePath = "/" + imagePath.replace(/\\/g, "/");
+      const imageUrl =
+        req.protocol + "://" + req.get("host") + imageRelativePath;
+      const image = imageUrl;
       const encryptedPassword = await MiscService.encryptPassword(password);
       let user = new User({
         name,
         email,
+        image,
         password: encryptedPassword,
       });
       user
@@ -31,7 +38,7 @@ const signup = async (req, res) => {
         .catch((e) => res.status(500).json({ error: e }));
     }
   } catch (e) {
-    // console.log(e);
+    console.log(e);
   }
 };
 
@@ -48,20 +55,22 @@ const login = async (req, res) => {
       const user_data = {
         user_id: result[0]._id,
       };
+
       let check = await MiscService.checkPassword(password, user.password);
       if (check) {
         let accessToken = jwt.sign({ user_data }, "access-key-secrete", {
-          expiresIn: "2d",
+          expiresIn: "1m",
         });
         let refreshToken = jwt.sign({ user_data }, "access-key-secrete", {
           expiresIn: "7d",
         });
-        let first_time = await Profession.findOne({ email: req.body.email });
+
+        // let first_time = await Profession.findOne({ email: req.body.email });
         const update = {
           access_token: accessToken,
           refresh_token: refreshToken,
         };
-        User.findOneAndUpdate(filter, update, { new: true });
+        await User.findOneAndUpdate(filter, update, { new: true });
         const tokens = {
           accessToken,
           refreshToken,
@@ -70,7 +79,7 @@ const login = async (req, res) => {
           status: "success",
           data: tokens,
           message: "Logged in successfully",
-          first_time: first_time == null ? true : false,
+          // first_time: first_time == null ? true : false,
         });
       } else {
         return res.status(404).json({ message: "Invalid credentails" });
@@ -80,34 +89,44 @@ const login = async (req, res) => {
 };
 
 async function refreshToken(req, res) {
-  const refreshToken = req.body.refreshToken;
-
+  const refresh = req.body.refreshToken;
   try {
-    const decoded = jwt.verify(refreshToken, "access-key-secrete");
-    console.log(decoded);
+    const decoded = jwt.verify(refresh, "access-key-secrete");
     const user = await User.findOne({
       _id: decoded.user_data?.user_id,
-      refreshToken,
+      refresh,
     });
     if (!user) {
       throw new Error();
     }
 
-    // Generate a new access token
-    const accessToken = jwt.sign({ user_id: user._id }, "access-key-secrete", {
-      expiresIn: "100m",
-    });
+    const user_data = {
+      user_id: user._id,
+    };
 
+    // Generate a new access token
+    const accessToken = jwt.sign({ user_data }, "access-key-secrete", {
+      expiresIn: "1m",
+    });
+    const refreshToken = jwt.sign({ user_data }, "access-key-secrete", {
+      expiresIn: "7d",
+    });
+    const update = {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    const filter = { _id: user._id };
+    await User.findOneAndUpdate(filter, update, { new: true });
+    res.json({ data: update });
     // Return the new access token
-    res.json({ accessToken });
   } catch (err) {
     res.status(401).json({ message: "Invalid refresh token" });
   }
 }
 
 async function profile(req, res) {
-  // let user_id = req.user.user_data.user_id;
-  await User.find({}).then((data) => {
+  let user_id = req.user.user_data.user_id;
+  await User.find({ _id: user_id }).then((data) => {
     const newData = data?.map((item) => {
       return {
         id: item._id,

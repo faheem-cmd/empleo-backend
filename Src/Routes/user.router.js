@@ -25,11 +25,12 @@ const user = require("../Controllers/AuthController");
 
 const employ = require("../Controllers/employ.controller");
 const auth = require("../Middlewares/AuthMiddleware");
+const kt = require("../Middlewares/Lt");
 
-router.post("/signup", user.signup);
+router.post("/signup", upload.single("image"), user.signup);
 router.post("/login", user.login);
 router.get("/page/:id", user.page);
-router.get("/user", user.profile);
+router.get("/user", auth.accessToken, user.profile);
 
 router.post("/upload", upload.single("image"), user.upload);
 router.post("/refresh", user.refreshToken);
